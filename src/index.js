@@ -2,10 +2,18 @@ import 'dotenv/config';
 import dns from 'node:dns';
 
 dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 import connectDB from './db/index.js';
-
-await connectDB();
+import { app } from './app.js';
+connectDB()
+  .then(() => {
+    app.listen(process.env.PORT || 8000, () => {
+      console.log("Server is running on port", process.env.PORT || 8000);
+    });
+    console.log("MongoDB connected successfully");
+  })
+  .catch((error) => {
+    console.log("MongoDB connection failed:", error);
+  });
 /*
 const app = express();
 
