@@ -143,8 +143,8 @@ const logOutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         },
         {
@@ -208,7 +208,7 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 
     }
     user.password = newPassword
-    await user.save({validateBeforesave:false})
+    await user.save({ validateBeforeSave: false });
     return res.status(200).json(new ApiResponse(200,"Password changed successfully"))
 })
 
@@ -230,7 +230,7 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
             }
         },
         {new:true}
-    ).select("-password")
+    ).select("-password -refreshToken")
     return res.status(200).json(
         new ApiResponse(200,user,"User details changed successfully")
     )
@@ -243,7 +243,7 @@ if(!avatarLocalPath)
     throw new ApiError(400,"Avatar file is missing")
 }
 const avatar = await uploadOnCloudinary(avatarLocalPath)
-if(!avatar.url)
+if(!avatar?.secure_url)
 {
     throw new ApiError(400,"Error while uploading Avatar on Cloudinary")
 }
@@ -259,11 +259,11 @@ return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfull
 });
     
 const updateCoverImage = asyncHandler(async (req,res)=>{
-        const {coverLocalPath} = req.file.path
+        const coverLocalPath = req.file.path
         if(!coverLocalPath){
             throw new ApiError(400,"Cover image does not exists")
         }
-        const coverImage = await uploadOnCloudinary(avatarLocalPath)
+        const coverImage = await uploadOnCloudinary(coverLocalPath)
         if(!coverImage.url)
         {
             throw new ApiError(400,"Error while uploading cover Image on Cloudinary")
@@ -383,4 +383,4 @@ const updateCoverImage = asyncHandler(async (req,res)=>{
     ])
     return res.status(200).json(new ApiResponse(200,user[0].watchHistory,"Watch History successfully fetched"))
     })
-export { registerUser,loginUser,logOutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateCoverImage,updateAvatar };
+export { registerUser,loginUser,logOutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateCoverImage,updateAvatar,getUserChannelPfofile,getWatchHistory};

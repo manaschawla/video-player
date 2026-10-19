@@ -92,6 +92,8 @@ app.use(cookieParser());
 // req.cookies.token
 
 import userRoute from "./routes/user.routes.js"
+import videoRoute from "./routes/video.routes.js"
 app.use("/api/v1/users",userRoute)
+app.use("/api/v1/videos", videoRoute);
 export { app };
 
