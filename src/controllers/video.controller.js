@@ -202,4 +202,55 @@ const getAllVideos = asyncHandler(async (req,res)=>{
         })
         return res.status(201).json(new ApiResponse(201,like,"The video liked successfully"))
     })
-export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo}
+    
+    const unlikeVideo = asyncHandler(async (req,res)=>{
+        if(!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID")
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        const like = await Like.findOne({video: req.params?.videoId, likedBy: req.user._id})
+        if(!like)
+        {
+            throw new ApiError(404,"Like does not exist")
+        }
+        await like.deleteOne()
+        return res.status(200).json(new ApiResponse(200,null,"The video unliked successfully"))
+    });
+    const getVideoLikes = asyncHandler(async (req,res)=>{
+        if(!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID")
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        const likesCount = await Like.countDocuments({
+            video: video._id
+        })
+        return res.status(200).json(new ApiResponse(200,likesCount,"Like count fetched successfully"))
+    })
+
+    const isVideoLikedByUser = asyncHandler(async (req,res)=>{
+        if(!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID")
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        const liked = await Like.findOne({video:video?._id , likedBy:req.user?._id})
+        return res.status(200).json(new ApiResponse(200,{ isLiked: Boolean(liked) },
+        "Video like status fetched successfully"
+    ));
+        
+    })
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser}
