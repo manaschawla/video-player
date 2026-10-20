@@ -4,7 +4,7 @@ import {Video} from "../models/video.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-import { User } from "../models/user.model.js";
+import { Like } from "../models/like.models.js";
 
 const uploadVideo = asyncHandler(async (req,res)=>{
     const {title, description} = req.body
@@ -141,5 +141,65 @@ const getAllVideos = asyncHandler(async (req,res)=>{
         await video.save();
         return res.status(200).json(new ApiResponse(200,video,"Video updated successfully"))
     })
+    const deleteVideo = asyncHandler(async (req,res)=>{
+        if (!mongoose.isValidObjectId(req.params?.videoId)) 
+        {
+            throw new ApiError(400, "Invalid video ID");
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not found")
+        }
+        if(video.owner.toString() !== req.user._id.toString())
+        {
+            throw new ApiError(403,"Access Denied")
+        }
+        await video.deleteOne() //This deletes the video document from MongoDB.
+        return res.status(200).json(new ApiResponse(200,null,"Video deleted Successfully"))
 
-export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails}
+    });
+    const togglePublishStatus = asyncHandler(async (req,res)=>{
+        if (!mongoose.isValidObjectId(req.params?.videoId)) 
+        {
+            throw new ApiError(400, "Invalid video ID");
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not found")
+        }
+        if(video.owner.toString() !== req.user._id.toString())
+        {
+            throw new ApiError(403,"Access Denied")
+        }
+        video.isPublished = !video.isPublished
+        await video.save()
+        return res.status(200).json(new ApiResponse(200,video,video.isPublished
+            ? "Video published successfully"
+            : "Video unpublished successfully"
+        ))
+    });
+
+    const likeVideo = asyncHandler(async (req,res)=>{
+        if(!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID")
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        const checkLike = await Like.findOne({ video: req.params?.videoId, likedBy: req.user._id })
+        if(checkLike)
+        {
+            throw new ApiError(409, "Video already liked");
+        }
+        const like = await Like.create({
+            video:video._id,
+            likedBy:req.user?._id
+        })
+        return res.status(201).json(new ApiResponse(201,like,"The video liked successfully"))
+    })
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo}
