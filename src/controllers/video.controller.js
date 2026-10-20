@@ -5,7 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { Like } from "../models/like.models.js";
-
+import { Comment } from "../models/comment.models.js";
 const uploadVideo = asyncHandler(async (req,res)=>{
     const {title, description} = req.body
     if(!title?.trim())
@@ -253,4 +253,75 @@ const getAllVideos = asyncHandler(async (req,res)=>{
     ));
         
     })
-export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser}
+    const addComment = asyncHandler(async (req,res)=>{
+        const {content} = req.body
+        if(!content?.trim())
+        {
+            throw new ApiError(400,"comment can't be empty")
+        }
+        if(!mongoose.isValidObjectId(req.params?.videoId)) 
+        {
+            throw new ApiError(400, "Invalid video ID");
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        const comment = await Comment.create({
+            content:content?.trim(),
+            video:video?._id,
+            owner:req.user?._id
+        })
+        return res.status(201).json(new ApiResponse(201,comment,"Comment added successfully"))
+    })
+    const getVideoComments = asyncHandler(async (req,res)=>{
+        if(!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID")
+        }
+        const video = await Video.findById(req.params?.videoId);
+        if(!video)
+        {
+            throw new ApiError(404,"video does not Exist")
+        }
+        const comments = await Comment.find({video:video._id}).sort({ createdAt: -1 });
+        return res.status(200).json(new ApiResponse(200,comments,"Comments fetched successfully"))
+    })
+
+    
+const updateComment = asyncHandler(async (req, res) => {
+    const { content } = req.body;
+    const commentId = req.params?.commentId;
+
+    if (!content?.trim()) 
+    {
+        throw new ApiError(400, "Comment can't be empty");
+    }
+
+    if (!mongoose.isValidObjectId(commentId)) 
+    {
+        throw new ApiError(400, "Invalid comment ID");
+    }
+
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) 
+    {
+        throw new ApiError(404, "Comment not found");
+    }
+
+    if (comment.owner.toString() !== req.user._id.toString()) 
+    {
+        throw new ApiError(403, "Access denied");
+    }
+
+    comment.content = content.trim();
+    await comment.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, comment, "Comment updated successfully")
+    );
+});
+
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser, addComment, getVideoComments, updateComment}
