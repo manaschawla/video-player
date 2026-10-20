@@ -3,7 +3,6 @@ import { ApiError } from "../utils/ApiError.js";
 import {Video} from "../models/video.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 
@@ -67,6 +66,7 @@ const getAllVideos = asyncHandler(async (req,res)=>{
     }
     const skip = (page - 1)* limit //to retrieve how many video mongo db should skip
     const videos = await Video.find({isPublished:true})
+                    .sort({createdAt:-1})
                     .skip(skip)
                     .limit(limit);
     const totalVideos = await Video.countDocuments({
@@ -84,5 +84,62 @@ const getAllVideos = asyncHandler(async (req,res)=>{
 
 
 });
+    const getVideoById = asyncHandler(async (req,res)=>{
+        if (!mongoose.isValidObjectId(req.params?.videoId))
+        {
+            throw new ApiError(400, "Invalid video ID");
+        }
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Such video don't exist")
+        }
+        return res.status(200).json(new ApiResponse(200,video,"Video fetched Successfully"))
 
-export {uploadVideo, getAllVideos}
+    })
+
+    const getMyVideos = asyncHandler(async (req,res)=>{
+        const videos = await Video.find({
+            owner: req.user?._id
+        });
+        return res.status(200).json(
+        new ApiResponse(200, videos, "My videos fetched successfully")
+        );
+    });
+
+    const updateVideoDetails = asyncHandler(async (req,res)=>{
+        const {title,description} = req.body
+        if (title === undefined && description === undefined) 
+        {
+            throw new ApiError(400, "Enter details to update");
+        }
+
+        if (!mongoose.isValidObjectId(req.params?.videoId)) 
+        {
+            throw new ApiError(400, "Invalid video ID");
+        }
+
+        const video = await Video.findById(req.params?.videoId)
+        if(!video)
+        {
+            throw new ApiError(404,"Video not Found")
+        }
+        if(video.owner.toString() !== req.user._id.toString())
+        {
+            throw new ApiError(403,"Access denied")
+        }
+        
+        if (title !== undefined) 
+        {
+            video.title = title;
+        }
+
+        if (description !== undefined) 
+        {
+            video.description = description;
+        }
+        await video.save();
+        return res.status(200).json(new ApiResponse(200,video,"Video updated successfully"))
+    })
+
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails}
