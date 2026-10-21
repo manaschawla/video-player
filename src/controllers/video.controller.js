@@ -323,5 +323,22 @@ const updateComment = asyncHandler(async (req, res) => {
         new ApiResponse(200, comment, "Comment updated successfully")
     );
 });
+    const deleteComment = asyncHandler(async (req,res)=>{
+        if (!mongoose.isValidObjectId(req.params?.commentId)) 
+        {
+            throw new ApiError(400, "Invalid comment ID");
+        }
+        const comment = await Comment.findById(req.params?.commentId)
+        if(!comment)
+        {
+            throw new ApiError(404, "Comment not found");
+        }
+        if(comment.owner.toString() !== req.user?._id.toString())
+        {
+            throw new ApiError(403, "Access denied");
+        }
+            await comment.deleteOne()
+        return res.status(200).json(new ApiResponse(200,null,"Comment deleted successfully"))
+    })
 
-export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser, addComment, getVideoComments, updateComment}
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser, addComment, getVideoComments, updateComment,deleteComment}
