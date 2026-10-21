@@ -1,4 +1,4 @@
-import moongose,{Schema} from "mongoose "
+import mongose,{Schema} from "mongoose "
 
 const subscriptionSchema = new Schema(
     {
@@ -13,5 +13,11 @@ const subscriptionSchema = new Schema(
     }
     ,{timestamps:true}
 )
+//Your compound unique index prevents duplicate subscriptions even if two requests arrive simultaneously.
+// returns an E11000 duplicate-key error, 
+subscriptionSchema.index(
+    { subscriber: 1, channel: 1 },
+    { unique: true }
+);
 
-export const Subscription = moongose.model("Subscription",subscriptionSchema)
+export const Subscription = mongose.model("Subscription",subscriptionSchema)
