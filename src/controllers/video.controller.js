@@ -66,6 +66,7 @@ const getAllVideos = asyncHandler(async (req,res)=>{
     }
     const skip = (page - 1)* limit //to retrieve how many video mongo db should skip
     const videos = await Video.find({isPublished:true})
+                    .populate("owner", "username fullName avatar coverImage")
                     .sort({createdAt:-1})
                     .skip(skip)
                     .limit(limit);

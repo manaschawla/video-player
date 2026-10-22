@@ -6,16 +6,28 @@ import { MoreVertical } from 'lucide-react'
 const VideoCard = ({ video }) => {
   const navigate = useNavigate()
 
+  const handleVideoClick = () => {
+    navigate(`/video/${video.id}`)
+  }
+
+  const handleChannelClick = (event) => {
+    event.stopPropagation()
+
+    if (video.owner?.username) {
+      navigate(`/channel/${video.owner.username}`)
+    }
+  }
+
   return (
     <div
-      className="group cursor-pointer"
-      onClick={() => navigate(`/video/${video.id}`)}
+      onClick={handleVideoClick}
+      className="cursor-pointer space-y-3"
     >
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-gray-800">
+      <div className="relative">
         <img
           src={video.thumbnail}
           alt={video.title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="aspect-video w-full rounded-xl object-cover"
         />
 
         <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-1 text-xs text-white">
@@ -23,31 +35,45 @@ const VideoCard = ({ video }) => {
         </span>
       </div>
 
-      <div className="mt-3 flex gap-3">
-        <img
-          src={video.avatar}
-          alt={video.channel}
-          className="h-10 w-10 rounded-full bg-gray-700 object-cover"
-        />
+      <div className="flex gap-3">
+        <button
+          onClick={handleChannelClick}
+          className="shrink-0"
+          aria-label={`Visit ${video.channel || 'channel'}`}
+        >
+          {video.avatar ? (
+            <img
+              src={video.avatar}
+              alt=""
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-gray-700" />
+          )}
+        </button>
 
         <div className="min-w-0 flex-1">
           <h3 className="line-clamp-2 font-semibold text-white">
             {video.title}
           </h3>
 
-          <p className="mt-1 text-sm text-gray-400">
-            {video.channel}
-          </p>
+          <button
+            onClick={handleChannelClick}
+            className="mt-1 block text-sm text-gray-400 hover:text-white"
+          >
+            {video.channel || 'Unknown channel'}
+          </button>
 
           <p className="text-sm text-gray-400">
-            {video.views} views · {video.uploadedAt}
+            {video.views || 0} views
+            {video.uploadedAt ? ` · ${video.uploadedAt}` : ''}
           </p>
         </div>
 
         <button
-          aria-label="More video options"
-          className="h-fit rounded-full p-1 text-gray-400 hover:bg-gray-800"
           onClick={(event) => event.stopPropagation()}
+          aria-label="More options"
+          className="h-fit rounded-full p-1 text-gray-400 hover:bg-gray-800"
         >
           <MoreVertical size={20} />
         </button>

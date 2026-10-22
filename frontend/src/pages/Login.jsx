@@ -2,10 +2,11 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Play } from 'lucide-react'
-import api from '../api/axios'
+import { useAuth } from '../context/AuthContext'
 
 const Login = () => {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [formData, setFormData] = useState({
     username: '',
@@ -29,10 +30,7 @@ const Login = () => {
     try {
       setLoading(true)
 
-      const response = await api.post('/users/login', formData)
-
-      console.log('Login response:', response.data)
-
+      await login(formData)
       navigate('/')
     } catch (error) {
       console.error('Login error:', error.response?.data || error.message)

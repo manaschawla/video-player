@@ -10,13 +10,13 @@ const storage = multer.diskStorage({
 
     // Set the name of the uploaded file.
     filename: function (req, file, cb) {
-        crypto.randomBytes(16, function (err, raw) {
-            if (err) return cb(err);
+    crypto.randomBytes(16, function (err, raw) {
+        if (err) return cb(err)
 
-            // Use the original filename for the uploaded file.
-            cb(null, file.originalname);
-        });
-    }
+        const uniqueName = `${raw.toString("hex")}-${file.originalname}`
+        cb(null, uniqueName)
+    })
+}
 });
 
 // Export Multer middleware to handle file uploads.

@@ -27,7 +27,6 @@ const WatchVideo = () => {
           'Fetch video error:',
           error.response?.data || error.message
         )
-
         setError(error.response?.data?.message || 'Failed to load video')
       } finally {
         setLoading(false)
@@ -67,21 +66,10 @@ const WatchVideo = () => {
 
       try {
         const response = await api.get('/subscriptions/c')
-        console.log('Subscribed channels response:', response.data)
+        const subscriptions = response.data.data.channels || []
 
-        const result = response.data.data
-
-        const channels = Array.isArray(result)
-          ? result
-          : result?.channels || result?.subscribedChannels || []
-
-        const subscribed = channels.some((item) => {
-          const subscribedChannelId =
-            item._id ||
-            item.channel?._id ||
-            item.channel
-
-          return String(subscribedChannelId) === String(channelId)
+        const subscribed = subscriptions.some((item) => {
+          return String(item.channel?._id) === String(channelId)
         })
 
         setIsSubscribed(subscribed)
@@ -114,7 +102,6 @@ const WatchVideo = () => {
         'Like action failed:',
         error.response?.data || error.message
       )
-
       alert(error.response?.data?.message || 'Please log in to like videos')
     } finally {
       setActionLoading(false)
@@ -141,37 +128,9 @@ const WatchVideo = () => {
         'Subscription action failed:',
         error.response?.data || error.message
       )
-
       alert(
         error.response?.data?.message || 'Unable to update subscription'
       )
-
-      // Recheck the server state in case the request changed it
-      // before returning an error.
-      try {
-        const response = await api.get('/subscriptions/c')
-        const result = response.data.data
-
-        const channels = Array.isArray(result)
-          ? result
-          : result?.channels || result?.subscribedChannels || []
-
-        setIsSubscribed(
-          channels.some((item) => {
-            const subscribedChannelId =
-              item._id ||
-              item.channel?._id ||
-              item.channel
-
-            return String(subscribedChannelId) === String(channelId)
-          })
-        )
-      } catch (refreshError) {
-        console.error(
-          'Could not refresh subscription status:',
-          refreshError.response?.data || refreshError.message
-        )
-      }
     } finally {
       setActionLoading(false)
     }
