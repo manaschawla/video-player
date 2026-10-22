@@ -94,7 +94,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     const video = await Video.findByIdAndUpdate(req.params.videoId,
         { $inc: { views: 1 } },
         { new: true }
-    );
+    ).populate("owner", "username");
 
     if (!video) 
     {
