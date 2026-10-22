@@ -1,13 +1,13 @@
-import mongose,{Schema} from "mongoose "
+import mongoose,{Schema} from "mongoose"
 
 const subscriptionSchema = new Schema(
     {
         subscriber:{
-            type: Schema.Types.ObjectId, //one who is subscribining
+            type: Schema.Types.ObjectId, //one who is subscribining kaun subscribe kar raha hai?
             ref:"User"
         },
         channel:{
-            type:Schema.Types.ObjectId, // one to whom subscriber is subscribing
+            type:Schema.Types.ObjectId, // one to whom subscriber is subscribing kisko subscribe kar raha hai?
             ref:"User"
         }
     }
@@ -20,4 +20,4 @@ subscriptionSchema.index(
     { unique: true }
 );
 
-export const Subscription = mongose.model("Subscription",subscriptionSchema)
+export const Subscription = mongoose.model("Subscription",subscriptionSchema)
