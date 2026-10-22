@@ -84,19 +84,26 @@ const getAllVideos = asyncHandler(async (req,res)=>{
 
 
 });
-    const getVideoById = asyncHandler(async (req,res)=>{
-        if (!mongoose.isValidObjectId(req.params?.videoId))
-        {
-            throw new ApiError(400, "Invalid video ID");
-        }
-        const video = await Video.findById(req.params?.videoId)
-        if(!video)
-        {
-            throw new ApiError(404,"Such video don't exist")
-        }
-        return res.status(200).json(new ApiResponse(200,video,"Video fetched Successfully"))
+    
+const getVideoById = asyncHandler(async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params?.videoId)) 
+    {
+        throw new ApiError(400, "Invalid video ID");
+    }
 
-    })
+    const video = await Video.findByIdAndUpdate(req.params.videoId,
+        { $inc: { views: 1 } },
+        { new: true }
+    );
+
+    if (!video) 
+    {
+        throw new ApiError(404, "Such video doesn't exist");
+    }
+
+    return res.status(200).json(new ApiResponse(200,video,"Video fetched successfully"));
+});
+
 
     const getMyVideos = asyncHandler(async (req,res)=>{
         const videos = await Video.find({
