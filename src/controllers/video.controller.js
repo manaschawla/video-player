@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { Like } from "../models/like.models.js";
 import { Comment } from "../models/comment.models.js";
+import { VideoView } from "../models/videoView.model.js";
 const uploadVideo = asyncHandler(async (req,res)=>{
     const {title, description} = req.body
     if(!title?.trim())
@@ -86,24 +87,34 @@ const getAllVideos = asyncHandler(async (req,res)=>{
 
 });
     
+
 const getVideoById = asyncHandler(async (req, res) => {
-    if (!mongoose.isValidObjectId(req.params?.videoId)) 
-    {
+    if (!mongoose.isValidObjectId(req.params?.videoId)) {
         throw new ApiError(400, "Invalid video ID");
     }
 
-    const video = await Video.findByIdAndUpdate(req.params.videoId,
-        { $inc: { views: 1 } },
-        { new: true }
-    ).populate("owner", "username");
+    const video = await Video.findById(req.params.videoId)
+        .populate("owner", "username");
 
-    if (!video) 
-    {
+    if (!video) {
         throw new ApiError(404, "Such video doesn't exist");
     }
 
-    return res.status(200).json(new ApiResponse(200,video,"Video fetched successfully"));
+    // Increment the existing total view count.
+    video.views += 1;
+    await video.save();
+
+    // Record when this view occurred.
+    await VideoView.create({
+        video: video._id,
+        owner: video.owner._id
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, video, "Video fetched successfully")
+    );
 });
+
 
 
     const getMyVideos = asyncHandler(async (req,res)=>{
@@ -293,7 +304,9 @@ const getVideoById = asyncHandler(async (req, res) => {
         {
             throw new ApiError(404,"video does not Exist")
         }
-        const comments = await Comment.find({video:video._id}).sort({ createdAt: -1 });
+        const comments = await Comment.find({ video: video._id })
+        .populate("owner", "username fullName avatar")
+        .sort({ createdAt: -1 })
         return res.status(200).json(new ApiResponse(200,comments,"Comments fetched successfully"))
     })
 
@@ -349,4 +362,83 @@ const updateComment = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200,null,"Comment deleted successfully"))
     })
 
-export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser, addComment, getVideoComments, updateComment,deleteComment}
+    
+const getCreatorAnalytics = asyncHandler(async (req, res) => {
+    const ownerId = req.user._id;
+
+    // Start of today in the server's local timezone.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 13);
+
+    const views = await VideoView.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(ownerId),
+                createdAt: { $gte: startDate }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    year: { $year: "$createdAt" },
+                    month: { $month: "$createdAt" },
+                    day: { $dayOfMonth: "$createdAt" }
+                },
+                views: { $sum: 1 }
+            }
+        },
+        {
+            $sort: {
+                "_id.year": 1,
+                "_id.month": 1,
+                "_id.day": 1
+            }
+        }
+    ]);
+
+    const myVideos = await Video.find({ owner: ownerId }).select("title thumbnail views");
+
+    const topVideos = [...myVideos]
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5);
+
+    const currentPeriodViews = views
+        .filter((item) => {
+            const date = new Date(
+                item._id.year,
+                item._id.month - 1,
+                item._id.day
+            );
+
+            return date >= today;
+        })
+        .reduce((total, item) => total + item.views, 0);
+
+    const previousPeriodViews = views
+        .filter((item) => {
+            const date = new Date(
+                item._id.year,
+                item._id.month - 1,
+                item._id.day
+            );
+
+            return date < today;
+        })
+        .reduce((total, item) => total + item.views, 0);
+
+    return res.status(200).json(new ApiResponse(200,
+            {
+                dailyViews: views,
+                currentPeriodViews,
+                previousPeriodViews,
+                topVideos
+            },
+            "Creator analytics fetched successfully"
+        ));
+});
+
+
+export {uploadVideo, getAllVideos, getVideoById,getMyVideos,updateVideoDetails,deleteVideo,togglePublishStatus, likeVideo, unlikeVideo,getVideoLikes,isVideoLikedByUser, addComment, getVideoComments, updateComment,deleteComment,getCreatorAnalytics}

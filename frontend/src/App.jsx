@@ -11,7 +11,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Channel from './pages/Channel'
 import Profile from './pages/Profile'
-
+import MyVideos from './pages/MyVideos'
+import EditVideo from './pages/EditVideo'
+import CreatorDashboard from './pages/CreatorDashboard'
 const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-950">
@@ -85,7 +87,32 @@ const App = () => {
             </MainLayout>
           }
         />
+         <Route
+    path="/my-videos"
+    element={
+      <MainLayout>
+        <MyVideos />
+      </MainLayout>
+    }
+  />
+      <Route
+      path="/edit-video/:videoId"
+      element={
+        <MainLayout>
+          <EditVideo />
+        </MainLayout>
+      }
+    />
+        <Route
+      path="/creator-dashboard"
+      element={
+        <MainLayout>
+          <CreatorDashboard />
+        </MainLayout>
+      }
+    />
       </Routes>
+       
     </BrowserRouter>
   )
 }

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { getAllVideos, getMyVideos, getVideoById, updateVideoDetails, uploadVideo,deleteVideo, togglePublishStatus, likeVideo, unlikeVideo, getVideoLikes, isVideoLikedByUser, addComment, getVideoComments, updateComment, deleteComment } from "../controllers/video.controller.js";
+import { getAllVideos, getMyVideos, getVideoById, updateVideoDetails, uploadVideo,deleteVideo, togglePublishStatus, likeVideo, unlikeVideo, getVideoLikes, isVideoLikedByUser, addComment, getVideoComments, updateComment, deleteComment, getCreatorAnalytics } from "../controllers/video.controller.js";
 
 const router = Router();
 //specific routes first
@@ -28,4 +28,5 @@ router.route("/comment/:videoId")
     .get(getVideoComments)
     .post(verifyJWT, addComment);
 router.route("/comments/:commentId").patch(verifyJWT, updateComment).delete(verifyJWT,deleteComment);
+router.route("/creator-analytics").get(verifyJWT, getCreatorAnalytics);
 export default router;
